@@ -5,11 +5,13 @@ const Argv = std.process.Args.Iterator;
 
 const Args = @This();
 
-/// The path to the in file
+/// The path to the input file, or "-" if stdin
 in: []const u8 = &.{},
-/// The path to the out file, if any
+/// The path to the output file, or "-" if stdout
 out: []const u8 = &.{},
+/// If the preprocessor should continue or fail if a word doesn't start with 'f'
 relax: bool = false,
+/// Print the help message
 help: bool = false,
 
 pub const help_message =
@@ -27,7 +29,6 @@ pub const help_message =
 
 pub fn deinit(a: Args, allocator: Allocator) void {
     allocator.free(a.in);
-
     allocator.free(a.out);
 }
 
@@ -42,6 +43,7 @@ pub const Error = error{
     AlreadySpecified,
 } || Io.Writer.Error || Allocator.Error;
 
+/// Parse the arguments passed to the program
 pub fn parse(allocator: Allocator, io: Io, iter: *Argv) Error!Args {
     var fields: ArgSet = .empty;
     var args: Args = .{};
@@ -110,14 +112,13 @@ pub fn parse(allocator: Allocator, io: Io, iter: *Argv) Error!Args {
     if (found_unknown_arg)
         return Error.UnknownArg;
 
+    // Set the default input file, if none has been supplied
     if (fields.eql(.empty)) {
         fields.insert(.in);
         args.in = try allocator.dupe(u8, "-");
     }
 
-    if (!verifyArgs(fields))
-        return Error.InvalidState;
-
+    // Set the default output file, if none has been supplied
     if (!fields.contains(.out)) {
         fields.insert(.out);
         args.out = try allocator.dupe(u8, "-");
@@ -126,18 +127,7 @@ pub fn parse(allocator: Allocator, io: Io, iter: *Argv) Error!Args {
     return args;
 }
 
-pub fn verifyArgs(argset: ArgSet) bool {
-    if (argset.contains(.help))
-        return true;
-
-    if (!argset.contains(.in)) {
-        std.log.err("Missing input file", .{});
-        return false;
-    }
-
-    return true;
-}
-
+/// Print the help message of the program
 pub fn printHelp(io: Io) Io.Writer.Error!void {
     var buf: [help_message.len]u8 = undefined;
     var stdout = Io.File.stdout().writer(io, &buf);

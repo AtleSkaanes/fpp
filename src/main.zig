@@ -20,6 +20,7 @@ pub fn main(init: std.process.Init) !void {
 
     const cwd = Io.Dir.cwd();
 
+    // Open the specified input file, or stdin if it is set to "-"
     const in_file = if (std.mem.eql(u8, args.in, "-")) Io.File.stdin() else f: {
         break :f cwd.openFile(init.io, args.in, .{}) catch |e| {
             std.log.err("Failed to open file '{s}': {t}", .{ args.in, e });
@@ -36,12 +37,14 @@ pub fn main(init: std.process.Init) !void {
 
     prep.preprocess(&file_reader.interface, &alloc_writer.writer, args.relax) catch |e| {
         switch (e) {
+            // The MissingF error will have already been handled
             error.MissingF => {},
             else => std.log.err("Failed to process stream: {t}", .{e}),
         }
         std.process.exit(1);
     };
 
+    // Open the specified output file, or stdout if it is set to "-"
     const out_file = if (std.mem.eql(u8, args.out, "-")) Io.File.stdout() else f: {
         break :f cwd.createFile(init.io, args.out, .{}) catch |e| {
             std.log.err("Failed to open file '{s}': {t}", .{ args.out, e });
@@ -50,6 +53,7 @@ pub fn main(init: std.process.Init) !void {
     };
     defer out_file.close(init.io);
 
+    // Since file_reader isn't using file_buf anymore, we can reuse it here
     var file_writer = out_file.writer(init.io, &file_buf);
     try file_writer.interface.writeAll(alloc_writer.written());
     file_writer.interface.flush() catch {};

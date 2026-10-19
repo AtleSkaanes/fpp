@@ -5,63 +5,73 @@ const Io = std.Io;
 
 pub const Error = error{ MissingF, ReadFailed, StreamTooLong } || Allocator.Error || Io.Reader.Error || Io.Writer.Error;
 
+/// Preprocess the input of a reader, and write the result to a writer
 pub fn preprocess(in: *Io.Reader, out: *Io.Writer, relax: bool) Error!void {
     var line_num: u32 = 1;
     while (try in.takeDelimiter('\n')) |line| : (line_num += 1) {
-        var in_word = false;
+        try processLine(out, line, line_num, relax);
+        try out.writeByte('\n');
+    }
 
-        var start_idx: usize = 0;
+    out.flush() catch {};
+}
 
-        for (line, 0..) |ch, i| {
-            const ch_is_word = isWordChar(ch);
+/// Process one line of input, and write the result to a writer
+fn processLine(out: *Io.Writer, line: []const u8, line_num: u32, relax: bool) Error!void {
+    var in_word = false;
 
-            if (in_word and ch_is_word) {
-                continue;
-            }
+    var start_idx: usize = 0;
 
-            if (in_word and !ch_is_word) {
-                handleWord(out, line[start_idx..i], relax) catch |e| {
-                    switch (e) {
-                        error.MissingF => std.log.err(
-                            "{}:{}: Word '{s}' doesn't start with 'f'",
-                            .{ line_num, start_idx + 1, line[start_idx..i] },
-                        ),
-                        else => {},
-                    }
-                    return e;
-                };
-                in_word = false;
-                start_idx = i;
-                continue;
-            }
+    for (line, 0..) |ch, i| {
+        const ch_is_word = isWordChar(ch);
 
-            if (!in_word and ch_is_word) {
-                try out.writeAll(line[start_idx..i]);
-                in_word = true;
-                start_idx = i;
-                continue;
-            }
+        // Was in word, and still in a word
+        if (in_word and ch_is_word) {
+            continue;
         }
 
-        if (in_word) {
-            handleWord(out, line[start_idx..], relax) catch |e| {
+        // Was in word, but is no longer in word
+        if (in_word and !ch_is_word) {
+            handleWord(out, line[start_idx..i], relax) catch |e| {
                 switch (e) {
                     error.MissingF => std.log.err(
                         "{}:{}: Word '{s}' doesn't start with 'f'",
-                        .{ line_num, start_idx + 1, line[start_idx..] },
+                        .{ line_num, start_idx + 1, line[start_idx..i] },
                     ),
                     else => {},
                 }
                 return e;
             };
-        } else {
-            try out.writeAll(line[start_idx..]);
+            in_word = false;
+            start_idx = i;
+            continue;
         }
 
-        try out.writeByte('\n');
+        // Was not in word, is now in word
+        if (!in_word and ch_is_word) {
+            // Print the non-word chars
+            try out.writeAll(line[start_idx..i]);
+            in_word = true;
+            start_idx = i;
+            continue;
+        }
     }
 
-    out.flush() catch {};
+    // If the line ended in a word, or in a non-word
+    if (in_word) {
+        handleWord(out, line[start_idx..], relax) catch |e| {
+            switch (e) {
+                error.MissingF => std.log.err(
+                    "{}:{}: Word '{s}' doesn't start with 'f'",
+                    .{ line_num, start_idx + 1, line[start_idx..] },
+                ),
+                else => {},
+            }
+            return e;
+        };
+    } else {
+        try out.writeAll(line[start_idx..]);
+    }
 }
 
 fn handleWord(out: *Io.Writer, word: []const u8, relax: bool) Error!void {
