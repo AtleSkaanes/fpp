@@ -16,14 +16,14 @@ help: bool = false,
 
 pub const help_message =
     \\F-klub Pre-Processor
-    \\  Fixes EVERY language by making you put an 'f' in front of every alphanumeric word
+    \\  Improves every language by making you put an 'f' in front of every alphanumeric word
     \\
     \\Usage: fpp [options] [file]
     \\
     \\Options:
     \\    -o, --out <PATH>    Specify the file to write to, set to '-' for stdout
     \\    -r, --relax         Do not error on words that don't start with 'f'
-    \\    -h, --help          Show this help screen
+    \\    -h, --help          Display this help text
     \\
 ;
 
