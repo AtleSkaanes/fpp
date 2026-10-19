@@ -1,7 +1,17 @@
 # F-Klubben Pre-Processor
 
 This preprocessor fixes an important issue that is in nearly all languages, which is of course that not all words start with f!
-You can run this preprocessor as a step before compilation
+You can run this preprocessor as a step before compilation.
+
+With fpp, you're code can look like this!
+```c
+#finclude <fstdio.fh>
+
+fint fmain()
+{
+    fprintf("FHello FWorld!\fn");
+}
+```
 
 ## Installation
 
