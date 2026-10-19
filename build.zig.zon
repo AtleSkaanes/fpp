@@ -1,6 +1,6 @@
 .{
     .name = .fpp,
-    .version = "0.0.0",
+    .version = "0.1.0",
     .fingerprint = 0xcc21664add57f235,
     .minimum_zig_version = "0.16.0",
     .dependencies = .{},
