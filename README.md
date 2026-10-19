@@ -14,3 +14,4 @@ $ zig build --release=fast
 
 Which compiles fpp and puts it in `./zig-out/bin/fpp`.
 
+For examples on how to use fpp, look in the examples directory.
