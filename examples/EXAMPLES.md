@@ -11,3 +11,9 @@ To compile this fibonacci Rust program, run this command:
 ```sh
 $ fpp fib.rs | rustc - -o fib
 ```
+
+## `pyramid.py`
+
+```sh
+$ fpp pyramid.py | python
+```
