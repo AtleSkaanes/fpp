@@ -9,7 +9,9 @@ pub const Error = error{ MissingF, ReadFailed, StreamTooLong } || Allocator.Erro
 pub fn preprocess(in: *Io.Reader, out: *Io.Writer, relax: bool) Error!void {
     var line_num: u32 = 1;
     while (try in.takeDelimiter('\n')) |line| : (line_num += 1) {
-        try processLine(out, line, line_num, relax);
+        if (line_num != 1 or !std.mem.startsWith(u8, line, "#!")) {
+            try processLine(out, line, line_num, relax);
+        }
         try out.writeByte('\n');
     }
 
